@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morning Ops QC Demo – BrightPath Home Services</title>
+<style>
+  :root {
+    --bg: #f3f6f7;
+    --panel: #ffffff;
+    --ink: #1c2b33;
+    --muted: #5a6b74;
+    --line: #cfd9de;
+    --accent: #1f5f7a;
+    --note: #fff6dc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 18px 48px; }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 14px; margin-bottom: 22px; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-size: 1.9rem; margin: 0 0 4px; }
+  .when { margin: 0; color: var(--muted); }
+  .summary { margin: 10px 0 0; font-weight: 600; }
+  .demo-note {
+    background: var(--note);
+    border: 1px solid #e6d28a;
+    padding: 10px 14px;
+    margin-bottom: 22px;
+    font-size: 0.92rem;
+  }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--accent);
+    padding: 16px 20px;
+    margin-bottom: 18px;
+  }
+  h2 { font-family: Georgia, "Times New Roman", serif; font-size: 1.3rem; margin: 0 0 4px; }
+  .sub { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; }
+  .empty { margin: 0; padding: 14px; border: 1px dashed var(--line); color: var(--muted); }
+  .leads { list-style: none; margin: 0; padding: 0; }
+  .lead { border-top: 1px solid var(--line); padding: 12px 0; }
+  .lead:first-child { border-top: 0; }
+  .lead-top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+  .tag {
+    border: 2px solid var(--accent);
+    padding: 1px 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .tag.urgent { background: var(--accent); color: #fff; }
+  .lead-name { font-weight: 700; }
+  .lead-source { color: var(--muted); font-size: 0.9rem; }
+  .lead-msg { margin: 6px 0 4px; font-style: italic; }
+  .lead-why, .lead-missing { margin: 2px 0; font-size: 0.93rem; }
+  .calls { list-style: none; margin: 0; padding: 0; }
+  .call { border-top: 1px solid var(--line); padding: 12px 0; }
+  .call:first-child { border-top: 0; }
+  .call-who { font-weight: 700; margin: 0 0 4px; }
+  .call-id { color: var(--muted); font-weight: 400; font-size: 0.9rem; }
+  .call p { margin: 2px 0; font-size: 0.95rem; }
+  .draft { border: 1px solid var(--line); margin: 0 0 14px; }
+  .draft-head {
+    display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline;
+    padding: 8px 14px; background: #eaf0f2; border-bottom: 1px solid var(--line);
+  }
+  .verdict { font-weight: 700; padding: 1px 10px; border: 2px solid; }
+  .verdict.approved { border-color: #2e7d4f; color: #1d5a36; background: #e6f4ec; }
+  .verdict.needs { border-color: #b7791f; color: #7a4f0f; background: #fff4de; }
+  .verdict.blocked { border-color: #b3261e; color: #fff; background: #b3261e; }
+  .held { color: var(--muted); font-size: 0.85rem; margin-left: auto; }
+  .draft-body { padding: 10px 14px; }
+  .draft-body p { margin: 4px 0 8px; font-size: 0.95rem; }
+  .draft-text { padding: 8px 12px; background: #f7f7f7; border-left: 3px solid var(--line); font-style: italic; }
+  .fixed { padding: 8px 12px; background: #e6f4ec; border-left: 3px solid #2e7d4f; }
+  #brief p { margin: 4px 0; font-size: 0.95rem; }
+  .decisions { margin: 12px 0 0; padding-left: 22px; }
+  .decisions li { margin: 6px 0; font-weight: 600; }
+  footer { color: var(--muted); font-size: 0.88rem; margin-top: 26px; }
+  a { color: var(--accent); }
+  a:focus, button:focus { outline: 3px solid #f0a202; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>BrightPath Home Services</h1>
+    <p class="when">Tuesday – morning brief, 7:45 a.m.</p>
+    <p class="summary" id="summary-line">Counts will appear here once the data is loaded.</p>
+  </header>
+
+  <div class="demo-note">
+    Demo with fictional data. Nothing on this page is sent to anyone.
+  </div>
+
+  <section id="leads">
+    <h2>Overnight leads</h2>
+    <p class="sub">New messages, sorted by priority, with the reason for each.</p>
+    <ol class="leads" id="leads-list"></ol>
+  </section>
+
+  <section id="calls">
+    <h2>Yesterday's calls</h2>
+    <p class="sub">Who called, what was agreed, and what is still owed.</p>
+    <ul class="calls" id="calls-list"></ul>
+  </section>
+
+  <section id="drafts">
+    <h2>Outbound drafts</h2>
+    <p class="sub">Drafts are held, not sent. Each one gets a quality check first.</p>
+    <div id="drafts-list"></div>
+  </section>
+
+  <section id="owner">
+    <h2>What the owner needs to decide today</h2>
+    <p class="sub">Two or three items only.</p>
+    <div id="brief"></div>
+    <ol class="decisions" id="decisions-list"></ol>
+  </section>
+
+  <footer>
+    All data is fictional. <a href="README.md">Read the README</a> for how this works.
+  </footer>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+  // Turn plain text into safe text for the page
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  // Round 2: show leads, sorted by rank (1 = most urgent)
+  const sortedLeads = DATA.leads.slice().sort(function (a, b) { return a.rank - b.rank; });
+
+  document.getElementById("leads-list").innerHTML = sortedLeads.map(function (l) {
+    return '<li class="lead">' +
+      '<div class="lead-top">' +
+        '<span class="tag' + (l.priority === "Urgent" ? ' urgent' : '') + '">' + esc(l.priority) + '</span>' +
+        '<span class="lead-name">' + esc(l.name) + '</span>' +
+        '<span class="lead-source">' + esc(l.id) + ' - ' + esc(l.source) + '</span>' +
+      '</div>' +
+      '<p class="lead-msg">"' + esc(l.message) + '"</p>' +
+      '<p class="lead-why"><strong>Why:</strong> ' + esc(l.reason) + '</p>' +
+      (l.missing ? '<p class="lead-missing"><strong>Still needed:</strong> ' + esc(l.missing) + '</p>' : '') +
+    '</li>';
+  }).join("");
+
+  // Round 3: show call summaries (who, what was agreed, what is still owed)
+  document.getElementById("calls-list").innerHTML = DATA.calls.map(function (c) {
+    return '<li class="call">' +
+      '<p class="call-who">' + esc(c.who) + ' <span class="call-id">' + esc(c.id) + '</span></p>' +
+      '<p><strong>Agreed:</strong> ' + esc(c.agreed) + '</p>' +
+      '<p><strong>Still owed:</strong> ' + esc(c.owed) + '</p>' +
+    '</li>';
+  }).join("");
+
+  // Round 4: show drafts with their quality-check verdict
+  const verdictClass = { "Approved": "approved", "Needs correction": "needs", "Blocked": "blocked" };
+
+  document.getElementById("drafts-list").innerHTML = DATA.drafts.map(function (d) {
+    const extra =
+      d.verdict === "Blocked"
+        ? '<p><strong>Do not send.</strong> The owner must fix this before anything goes out.</p>'
+        : d.corrected
+          ? '<p><strong>Corrected version:</strong></p><p class="fixed">' + esc(d.corrected) + '</p>'
+          : '<p><strong>Can be sent as written</strong> once the owner approves it.</p>';
+    return '<article class="draft">' +
+      '<div class="draft-head">' +
+        '<span class="verdict ' + verdictClass[d.verdict] + '">' + esc(d.verdict) + '</span>' +
+        '<strong>' + esc(d.id) + ' - ' + esc(d.to) + '</strong>' +
+        '<span>' + esc(d.about) + '</span>' +
+        '<span class="held">Held, not sent</span>' +
+      '</div>' +
+      '<div class="draft-body">' +
+        '<p><strong>Original draft:</strong></p>' +
+        '<p class="draft-text">' + esc(d.text) + '</p>' +
+        '<p><strong>Why:</strong> ' + esc(d.reason) + '</p>' +
+        extra +
+      '</div>' +
+    '</article>';
+  }).join("");
+
+  // Round 5: morning brief (counts are calculated from the data)
+  function countBy(list, field, value) {
+    return list.filter(function (x) { return x[field] === value; }).length;
+  }
+  const nLeads = DATA.leads.length;
+  const nCalls = DATA.calls.length;
+  const nDrafts = DATA.drafts.length;
+  const nApproved = countBy(DATA.drafts, "verdict", "Approved");
+  const nNeeds = countBy(DATA.drafts, "verdict", "Needs correction");
+  const nBlocked = countBy(DATA.drafts, "verdict", "Blocked");
+  const nUrgent = countBy(DATA.leads, "priority", "Urgent");
+  const nHigh = countBy(DATA.leads, "priority", "High");
+  const nMedium = countBy(DATA.leads, "priority", "Medium");
+  const nLow = countBy(DATA.leads, "priority", "Low");
+
+  // One line at the top of the page
+  document.getElementById("summary-line").textContent =
+    nLeads + " leads, " + nCalls + " calls, " + nDrafts + " drafts checked, " + nBlocked + " blocked.";
+
+  // Blocked items, with the reason
+  const blockedText = DATA.drafts
+    .filter(function (d) { return d.verdict === "Blocked"; })
+    .map(function (d) { return '<p><strong>Blocked ' + esc(d.id) + ' (' + esc(d.to) + '):</strong> ' + esc(d.reason) + '</p>'; })
+    .join("");
+
+  document.getElementById("brief").innerHTML =
+    '<p><strong>Leads:</strong> ' + nLeads + ' sorted. ' + nUrgent + ' urgent, ' + nHigh + ' high, ' +
+      nMedium + ' medium, ' + nLow + ' need more information.</p>' +
+    '<p><strong>Calls:</strong> ' + nCalls + ' summarised.</p>' +
+    '<p><strong>Drafts checked:</strong> ' + nDrafts + '. Approved: ' + nApproved +
+      '. Needs correction: ' + nNeeds + '. Blocked: ' + nBlocked + '.</p>' +
+    blockedText;
+
+  // Owner decisions (kept to three items, written by hand)
+  const decisions = [
+    "Confirm the arrival window for James Carter's leak repair today (L2).",
+    "Confirm 10 a.m. on Friday 20 Nov with Lucia Fernandez (L7).",
+    "Rewrite the blocked drafts before anything is sent: the price in D1, the date in D2, and the invented guarantee in D5."
+  ];
+  document.getElementById("decisions-list").innerHTML =
+    decisions.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join("");
+</script>
+</body>
+</html>
